@@ -1,6 +1,9 @@
 """
-Test for gradient descent and automatic differentiation for linear regression.
-From https://github.com/mattnedrich/GradientDescentExample and https://github.com/HIPS/autograd/blob/master/examples/neural_net.py
+Solving an ODE using a perceptron of 1 hidden layer.
+dy/dx + 1/5*y = exp(-x/5)*cos(x)
+Subject to y(0) = 0, and 0 <= x <= 2.
+The analytical solution is y_a = exp(-x/5)*sin(x)
+The trial solution is y_t = x*N, where N = N(x, params) is a MLP.
 """
 
 import numpy as np
@@ -24,8 +27,8 @@ if __name__ == '__main__':
 	np.random.shuffle( points )
 
 	# Training parameters.
-	batch_size = 20
-	num_epochs = 25
+	batch_size = 25
+	num_epochs = 100
 	num_batches = int( np.ceil( len( points ) / batch_size ) )
 	step_size = 0.1
 
