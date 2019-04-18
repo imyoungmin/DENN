@@ -11,6 +11,60 @@ import autograd
 from autograd.misc.optimizers import adam
 import matplotlib.pyplot as plt
 
+
+H = 10			# Number of neurons in hidden layer.
+
+
+def sigmoid( x ):
+	"""
+	Sigmoid function.
+	:param x: Maybe a vector.
+	:return: Element-wise sigmoid function of input vector x.
+	"""
+	return 1.0 / ( 1.0 + np.exp( -x ) )
+
+
+def sigmoidPrime( x ):
+	"""
+	Derivative of sigmoid function.
+	:param x: Input vector.
+	:return: sigmoid'(x)
+	"""
+	return sigmoid( x ) * ( 1.0 - sigmoid( x ) )
+
+
+def nnet( x, params ):
+	"""
+	Compute output from neural network.
+	:param x: A vector of n input values.
+	:param params: A list [(W,b),(V,)], where W is an mxn matrix (w_ij = weight from input j to neuron i), b is the bias vector with m elements, and V is a 1 x m weight vector.
+	:return: Scalar evaluation of neural network.
+	"""
+	W = params[0][0]					# Weights towards hidden layer.
+	b = params[0][1]					# Biases for hidden layer units.
+	V = params[1][0]					# Weights towards output layer.
+	z = np.dot( W, x ) + b
+	sigma = sigmoid( z )				# Become inputs for output layer neuron.
+	return np.dot( V, sigma )			# Output neuron is linear.
+
+
+def dNnet_dxj( x, params, j ):
+	"""
+	Derivate of the network with respect to the jth entry.
+	:param x: Vector of n input values.
+	:param params: Network parameters (cfr nnet(.)).
+	:param j: Input index with respect to which we want to compute the derivative of nnet.
+	:return: N_g evaluated at x_j.
+	"""
+	W = params[0][0]
+	b = params[0][1]
+	V = params[1][0]
+	z = np.dot( W, x ) + b
+	sigmaPrime = sigmoidPrime( z )
+	vw = V * W[:,j]
+	return np.dot( vw, sigmaPrime )
+
+
 # y = mx + b
 # m is slope, b is y-intercept => params:[m, b]
 def compute_error( params, inputs ):
