@@ -31,13 +31,13 @@ def loss_function( w ):
 	return (cur_y - ( w[0] * cur_x + w[1] )) ** 2
 
 def step_gradient( w, points, learningRate ):
-	global cur_x, cur_y
+	global grad_function, cur_x, cur_y
 	w_grad = np.array([0.0, 0.0])
 	N = float( len( points ) )
 	for i in range( 0, len( points ) ):
 		cur_x = points[i, 0]
 		cur_y = points[i, 1]
-		w_grad += loss_function( w ) / 1000.
+		w_grad += grad_function( w )
 	new_w = w - learningRate * w_grad / N
 	return new_w
 
