@@ -9,6 +9,7 @@ The trial solution is y_t = x_2 \sin(\pi x_1) + x_1(1 - x_1)x_2(1 - x_2)N, where
 import autograd.numpy as np
 import autograd
 from autograd.misc.optimizers import adam
+import random
 import matplotlib.pyplot as plt
 
 
@@ -131,21 +132,26 @@ def error( inputs, params ):
 
 
 if __name__ == '__main__':
-	np.random.seed( 0 )
-	N = 21										# Number of training samples.
+	np.random.seed( 31 )
+	random.seed( 11 )
+	N = 7									# Number of training samples per dimension.
 	MinVal = 0
 	MaxVal = 1
-	points = [np.random.uniform( MinVal, MaxVal, 2 ) for i in range( N )]	# Training dataset.
+	points = []
+	for ii in range( N + 1 ):
+		for jj in range( N + 1 ):
+			points.append( np.array( [ii/N, jj/N] ) )		# Training dataset.
+	random.shuffle( points )
 
 	# Training parameters.
-	H = 7  										# Number of neurons in hidden layer.
-	batch_size = 3
-	num_epochs = 100
+	H = 7  									# Number of neurons in hidden layer.
+	batch_size = 4							# (31,11,7,7,4,0.055), (-,-,11,7,3,0.03)
+	num_epochs = 50
 	num_batches = int( np.ceil( len( points ) / batch_size ) )
-	step_size = 0.09
+	step_size = 0.055
 
 	def initParams():
-		return [(np.random.rand( H, 2 ), np.random.rand( H )), (np.random.rand( H ),)]
+		return [(np.random.uniform( -1, +1, (H, 2) ), np.random.uniform( -1, +1, H )), (np.random.uniform( -1, +1, H ),)]
 
 	def batchIndices( i ):
 		idx = i % num_batches
@@ -173,9 +179,9 @@ if __name__ == '__main__':
 
 	# Get maximum error.
 	maxError = 0;
-	for x in points:
-		y_a = phi_a( x )
-		y_t = phi_t( x, optimizedParams )
+	for xp in points:
+		y_a = phi_a( xp )
+		y_t = phi_t( xp, optimizedParams )
 		error = np.abs( y_a - y_t )
 		if error > maxError:
 			maxError = error
