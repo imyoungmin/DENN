@@ -145,6 +145,9 @@ def plotSurface( XX, YY, ZZ, title ):
 	ax = fig1.gca( projection='3d' )
 	surf = ax.plot_surface( XX, YY, ZZ, cmap=cm.jet, linewidth=0, antialiased=False, rstride=1, cstride=1 )
 	fig1.colorbar( surf, shrink=0.5, aspect=5 )
+	ax.set_xlabel( r"$x_1$" )
+	ax.set_ylabel( r"$x_2$" )
+	ax.set_zlabel( r"$\phi$" )
 	plt.title( title )
 	plt.show()
 
@@ -229,4 +232,6 @@ if __name__ == '__main__':
 	im = plt.imshow( Z_e, cmap=cm.jet, extent=(0, 1, 0, 1), interpolation='bilinear' )
 	fig.colorbar( im )
 	plt.title( r"Error surface $|\phi_a(\mathbf{x}) - \phi_t(\mathbf{x})|$" )
+	plt.xlabel( r"$x_1$" )
+	plt.ylabel( r"$x_2$" )
 	plt.show()
