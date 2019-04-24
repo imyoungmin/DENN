@@ -11,6 +11,8 @@ import autograd
 from autograd.misc.optimizers import adam
 import random
 import matplotlib.pyplot as plt
+from mpl_toolkits.mplot3d import Axes3D
+from matplotlib import cm
 
 
 def sigmoid( z ):
@@ -131,6 +133,22 @@ def error( inputs, params ):
 	return totalError / float( len( points ) )
 
 
+def plotSurface( XX, YY, ZZ, title ):
+	"""
+	Plot a 3D surface.
+	:param XX: Grid of x coordinates.
+	:param YY: Grid of y coordinates.
+	:param ZZ: Grid of z values.
+	:param title: Figure title.
+	"""
+	fig1 = plt.figure()
+	ax = fig1.gca( projection='3d' )
+	surf = ax.plot_surface( XX, YY, ZZ, cmap=cm.jet, linewidth=0, antialiased=False, rstride=1, cstride=1 )
+	fig1.colorbar( surf, shrink=0.5, aspect=5 )
+	plt.title( title )
+	plt.show()
+
+
 if __name__ == '__main__':
 	np.random.seed( 31 )
 	random.seed( 11 )
@@ -145,7 +163,7 @@ if __name__ == '__main__':
 
 	# Training parameters.
 	H = 7  									# Number of neurons in hidden layer.
-	batch_size = 4							# (31,11,7,7,4,0.055), (-,-,11,7,3,0.03)
+	batch_size = 4
 	num_epochs = 50
 	num_batches = int( np.ceil( len( points ) / batch_size ) )
 	step_size = 0.055
@@ -178,7 +196,7 @@ if __name__ == '__main__':
 	printPerf( optimizedParams, 0, None )
 
 	# Get maximum error.
-	maxError = 0;
+	maxError = 0
 	for xp in points:
 		y_a = phi_a( xp )
 		y_t = phi_t( xp, optimizedParams )
@@ -186,3 +204,29 @@ if __name__ == '__main__':
 		if error > maxError:
 			maxError = error
 	print( "Max error:", maxError )
+
+	# Plot solutions.
+
+	# Make data.
+	X = np.linspace( MinVal, MaxVal, 100 )
+	Y = np.linspace( MinVal, MaxVal, 100 )
+	X, Y = np.meshgrid( X, Y )
+	Z_a = np.zeros( X.shape )			# Analytic solution.
+	Z_t = np.zeros( X.shape )			# Trial solution with neural network.
+	Z_e = np.zeros( X.shape )			# Error surface.
+	for ii in range( X.shape[0] ):
+		for jj in range( X.shape[1] ):
+			v = np.array( [X[ii][jj], Y[ii][jj]] )				# Input values.
+			Z_a[ii][jj] = phi_a( v )
+			Z_t[ii][jj] = phi_t( v, optimizedParams )
+			Z_e[ii][jj] = np.abs( Z_a[ii][jj] - Z_t[ii][jj] )
+
+	plotSurface( X, Y, Z_a, r"Analytic solution $\phi_a(\mathbf{x})$" )
+	plotSurface( X, Y, Z_t, r"Trial solution $\phi_t(\mathbf{x}, \mathbf{p})$" )
+
+	# Plotting the error surface.
+	fig = plt.figure()
+	im = plt.imshow( Z_e, cmap=cm.jet, extent=(0, 1, 0, 1), interpolation='bilinear' )
+	fig.colorbar( im )
+	plt.title( r"Error surface $|\phi_a(\mathbf{x}) - \phi_t(\mathbf{x})|$" )
+	plt.show()
