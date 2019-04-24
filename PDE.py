@@ -106,39 +106,46 @@ def d2Phi_t_dx12( x, params ):
 		   * ( x[0] * ( 1.0 - x[0] ) * dkNnet_dxjk( x, params, 0, 2 ) + 2.0 * ( 1.0 - 2.0 * x[0] ) * dkNnet_dxjk( x, params, 0, 1 ) - 2.0 * nnet( x, params ) )
 
 
-# TODO: d2Phi_t_dx22
+def d2Phi_t_dx22( x, params ):
+	"""
+	Second partial derivative of the trial function with respect to x_2 evaluated at x = (x_1, x_2).
+	:param x: Input value vector (x_1, x_2).
+	:param params: Neural network params (cfr. nnet(.)).
+	:return: \frac{d^2\phi_t}{dx_2^2} evaluated at x = (x_1, x_2).
+	"""
+	return x[0] * ( 1.0 - x[0] ) \
+		   * ( x[1] * ( 1.0 - x[1] ) * dkNnet_dxjk( x, params, 1, 2 ) + 2.0 * ( 1.0 - 2.0 * x[1] ) * dkNnet_dxjk( x, params, 1, 1 ) - 2.0 * nnet( x, params ) )
 
 
 def error( inputs, params ):
 	"""
 	Compute the average of the squared error.
-	:param inputs: Array of input values.
+	:param inputs: List of input vector values.
 	:param params: Neural network parameters.
 	:return: Avg squared error.
 	"""
 	totalError = 0
-	for i in range( 0, len( inputs ) ):
-		x = inputs[i]
-		totalError += ( dPhi_t_dx( x, params ) + 0.2 * phi_t( x, params ) - np.exp( -x / 5.0 ) * np.cos( x ) ) ** 2
+	for x in inputs:
+		totalError += ( d2Phi_t_dx12( x, params ) + d2Phi_t_dx22( x, params ) ) ** 2
 	return totalError / float( len( points ) )
 
 
 if __name__ == '__main__':
 	np.random.seed( 0 )
-	N = 17										# Number of training samples.
-	MinX = 0
-	MaxX = 2
-	points = np.random.uniform( MinX, MaxX, N )	# Training dataset.
+	N = 21										# Number of training samples.
+	MinVal = 0
+	MaxVal = 1
+	points = [np.random.uniform( MinVal, MaxVal, 2 ) for i in range( N )]	# Training dataset.
 
 	# Training parameters.
-	H = 6  										# Number of neurons in hidden layer.
-	batch_size = 2
-	num_epochs = 30
+	H = 7  										# Number of neurons in hidden layer.
+	batch_size = 3
+	num_epochs = 100
 	num_batches = int( np.ceil( len( points ) / batch_size ) )
-	step_size = 0.05
+	step_size = 0.09
 
 	def initParams():
-		return [(np.random.rand(H), np.random.rand(H)), (np.random.rand(H),)]
+		return [(np.random.rand( H, 2 ), np.random.rand( H )), (np.random.rand( H ),)]
 
 	def batchIndices( i ):
 		idx = i % num_batches
@@ -164,27 +171,12 @@ if __name__ == '__main__':
 							 num_iters=num_epochs * num_batches, callback=printPerf )
 	printPerf( optimizedParams, 0, None )
 
-	# Plot analytical solution versus trial solution.
-	plt.figure( 1 )
-	p = np.linspace( MinX, MaxX, 100 )
-	y_a = phi_a( p )
-	plt.plot( p, y_a, "r-", label="Analytical solution" )
-	y_t = []
-	for xp in p:
-		y_t += [phi_t( xp, optimizedParams )]
-	plt.plot( p, y_t, "b-", label="Trial solution" )
-	plt.plot( [np.min( points ), np.min( points )], [0, 0.8], "g-" )
-	plt.plot( [np.max( points ), np.max( points )], [0, 0.8], "g-" )
-	plt.xlabel( "x" )
-	plt.ylabel( r"$\phi(x)$" )
-	plt.legend()
-	plt.title( r"Approximating solution to $\frac{d\phi}{dx} + \frac{1}{5}\phi = e^{-x/5}\cos(x)$, $\phi(0) = 0$" )
-	plt.show()
-
-	# Plot error.
-	plt.figure( 2 )
-	plt.plot( p, np.abs( y_a - y_t ) )
-	plt.xlabel( "x" )
-	plt.ylabel( r"$|\phi_a(x) - \phi_t(x)|$" )
-	plt.title( "Error" )
-	plt.show()
+	# Get maximum error.
+	maxError = 0;
+	for x in points:
+		y_a = phi_a( x )
+		y_t = phi_t( x, optimizedParams )
+		error = np.abs( y_a - y_t )
+		if error > maxError:
+			maxError = error
+	print( "Max error:", maxError )
