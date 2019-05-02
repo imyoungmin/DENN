@@ -69,6 +69,15 @@ def phi_a( x ):
 	return np.exp( -x / 5.0 ) * np.sin( x )
 
 
+def dPhi_a_dx( x ):
+	"""
+	Derivative of analytical solution.
+	:param x: Input value.
+	:return: e^{-x/5}(\cos(x) - 1/5\sin(x))
+	"""
+	return np.exp( -x/5.0 ) * ( np.cos( x ) - 1.0/5.0 * np.sin( x ) )
+
+
 def phi_t( x, params ):
 	"""
 	Trial function.
@@ -150,8 +159,8 @@ if __name__ == '__main__':
 	y_a = phi_a( p )
 	plt.plot( p, y_a, "r-", label="Analytical solution" )
 	y_t = []
-	for x in p:
-		y_t += [phi_t( x, optimizedParams )]
+	for xp in p:
+		y_t += [phi_t( xp, optimizedParams )]
 	plt.plot( p, y_t, "b-", label="Trial solution" )
 	plt.plot( [np.min( points ), np.min( points )], [0, 0.8], "g-" )
 	plt.plot( [np.max( points ), np.max( points )], [0, 0.8], "g-" )
@@ -167,4 +176,25 @@ if __name__ == '__main__':
 	plt.xlabel( "x" )
 	plt.ylabel( r"$|\phi_a(x) - \phi_t(x)|$" )
 	plt.title( "Error" )
+	plt.show()
+
+	# Plot derivaties of analytical and trial solution.
+	dy_a = dPhi_a_dx( p )
+	dy_t = []
+	for xp in p:
+		dy_t.append( dPhi_t_dx( xp, optimizedParams ) )
+	plt.plot( p, dy_a, "r-", label="Derivative of analytical solution" )
+	plt.plot( p, dy_t, "b-", label="Derivative of trial solution" )
+	plt.xlabel( "x" )
+	plt.ylabel( r"$\phi'(x)$" )
+	plt.legend()
+	plt.title( "Approximated derivative versus true solution's derivative" )
+	plt.show()
+
+	# Plot error for derivatives.
+	plt.figure( 4 )
+	plt.plot( p, np.abs( dy_a - dy_t ) )
+	plt.xlabel( "x" )
+	plt.ylabel( r"$|\phi'_a(x) - \phi'_t(x)|$" )
+	plt.title( "Absolute error in derivatives" )
 	plt.show()

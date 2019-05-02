@@ -88,6 +88,24 @@ def phi_a( x ):
 		   * ( np.exp( np.pi * x[1] ) - np.exp( -np.pi * x[1] ) )
 
 
+def d2Phi_a_dx12( x ):
+	"""
+	Second partial derivative of the analytical function with respect to x_1 evaluated at x = (x_1, x_2).
+	:param x: Input value vector (x_1, x_2).
+	:return: \frac{d^2\phi_a}{dx_1^2} evaluated at x = (x_1, x_2).
+	"""
+	return -( np.pi ** 2 ) / ( np.exp( np.pi ) - np.exp( -np.pi ) ) * np.sin( np.pi * x[0] ) * ( np.exp( np.pi * x[1] ) - np.exp( -np.pi * x[1] ) )
+
+
+def d2Phi_a_dx22( x ):
+	"""
+	Second partial derivative of the analytica function with respect to x_2 evaluated at x = (x_1, x_2).
+	:param x: Input value vector (x_1, x_2).
+	:return: \frac{d^2\phi_a}{dx_2^2} evaluated at x = (x_1, x_2).
+	"""
+	return ( np.pi ** 2 ) / ( np.exp( np.pi ) - np.exp( -np.pi ) ) * np.sin( np.pi * x[0] ) * ( np.exp( np.pi * x[1] ) - np.exp( -np.pi * x[1] ) )
+
+
 def phi_t( x, params ):
 	"""
 	Trial function.
@@ -133,13 +151,14 @@ def error( inputs, params ):
 	return totalError / float( len( points ) )
 
 
-def plotSurface( XX, YY, ZZ, title ):
+def plotSurface( XX, YY, ZZ, title, zLabel=r"$\phi$" ):
 	"""
 	Plot a 3D surface.
 	:param XX: Grid of x coordinates.
 	:param YY: Grid of y coordinates.
 	:param ZZ: Grid of z values.
 	:param title: Figure title.
+	:param zLabel: Label for z-axis.
 	"""
 	fig1 = plt.figure()
 	ax = fig1.gca( projection='3d' )
@@ -147,8 +166,24 @@ def plotSurface( XX, YY, ZZ, title ):
 	fig1.colorbar( surf, shrink=0.5, aspect=5 )
 	ax.set_xlabel( r"$x_1$" )
 	ax.set_ylabel( r"$x_2$" )
-	ax.set_zlabel( r"$\phi$" )
+	ax.set_zlabel( zLabel )
 	plt.title( title )
+	plt.show()
+
+
+def plotHeatmap( Z, title ):
+	"""
+	Plot a heatmap of a rectangular matrix.
+	:param Z: An m-by-n matrix to plot.
+	:param title: Figure title.
+	:return:
+	"""
+	fig1 = plt.figure()
+	im = plt.imshow( Z, cmap=cm.jet, extent=(0, 1, 0, 1), interpolation='bilinear' )
+	fig1.colorbar( im )
+	plt.title( title )
+	plt.xlabel( r"$x_1$" )
+	plt.ylabel( r"$x_2$" )
 	plt.show()
 
 
@@ -217,21 +252,39 @@ if __name__ == '__main__':
 	Z_a = np.zeros( X.shape )			# Analytic solution.
 	Z_t = np.zeros( X.shape )			# Trial solution with neural network.
 	Z_e = np.zeros( X.shape )			# Error surface.
+	d2Z_a_x12 = np.zeros( X.shape )		# Second derivatives of analytic solution.
+	d2Z_a_x22 = np.zeros( X.shape )
+	d2Z_t_x12 = np.zeros( X.shape )		# Second derivatives of trial solution.
+	d2Z_t_x22 = np.zeros( X.shape )
+	d2Z_e_x12 = np.zeros( X.shape )		# Error surface for second derivatives with respect to x_1.
+	d2Z_e_x22 = np.zeros( X.shape )		# Error surface for second derivatives with respect to x_2.
 	for ii in range( X.shape[0] ):
 		for jj in range( X.shape[1] ):
 			v = np.array( [X[ii][jj], Y[ii][jj]] )				# Input values.
-			Z_a[ii][jj] = phi_a( v )
+			Z_a[ii][jj] = phi_a( v )							# Evalutating solutions.
 			Z_t[ii][jj] = phi_t( v, optimizedParams )
 			Z_e[ii][jj] = np.abs( Z_a[ii][jj] - Z_t[ii][jj] )
 
+			d2Z_a_x12[ii][jj] = d2Phi_a_dx12( v )				# Evaluating derivatives.
+			d2Z_a_x22[ii][jj] = d2Phi_a_dx22( v )
+			d2Z_t_x12[ii][jj] = d2Phi_t_dx12( v, optimizedParams )
+			d2Z_t_x22[ii][jj] = d2Phi_t_dx22( v, optimizedParams )
+			d2Z_e_x12[ii][jj] = np.abs( d2Z_a_x12[ii][jj] - d2Z_t_x12[ii][jj] )
+			d2Z_e_x22[ii][jj] = np.abs( d2Z_a_x22[ii][jj] - d2Z_t_x22[ii][jj] )
+
+	# Plotting solutions.
 	plotSurface( X, Y, Z_a, r"Analytic solution $\phi_a(\mathbf{x})$" )
 	plotSurface( X, Y, Z_t, r"Trial solution $\phi_t(\mathbf{x}, \mathbf{p})$" )
 
-	# Plotting the error surface.
-	fig = plt.figure()
-	im = plt.imshow( Z_e, cmap=cm.jet, extent=(0, 1, 0, 1), interpolation='bilinear' )
-	fig.colorbar( im )
-	plt.title( r"Error surface $|\phi_a(\mathbf{x}) - \phi_t(\mathbf{x})|$" )
-	plt.xlabel( r"$x_1$" )
-	plt.ylabel( r"$x_2$" )
-	plt.show()
+	# Plotting the error heatmap.
+	plotHeatmap( Z_e, r"Error heatmap for $|\phi_a(\mathbf{x}) - \phi_t(\mathbf{x})|$" )
+
+	# Plotting second derivatives.
+	plotSurface( X, Y, d2Z_a_x12, r"Second derivative of analytical solution with respect to $x_1$", r"$\phi''_a$" )
+	plotSurface( X, Y, d2Z_a_x22, r"Second derivative of analytical solution with respect to $x_2$", r"$\phi''_a$" )
+	plotSurface( X, Y, d2Z_t_x12, r"Second derivative of trial solution with respect to $x_1$", r"$\phi''_t$" )
+	plotSurface( X, Y, d2Z_t_x22, r"Second derivative of trial solution with respect to $x_2$", r"$\phi''_t$" )
+
+	# Plotting the error heatmap for second derivatives.
+	plotHeatmap( d2Z_e_x12, r"Error heatmap for second derivatives with respect to $x_1$" )
+	plotHeatmap( d2Z_e_x22, r"Error heatmap for second derivatives with respect to $x_2$" )
